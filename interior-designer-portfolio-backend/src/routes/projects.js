@@ -26,7 +26,7 @@ router.get('/featured', async (req, res) => {
   }
 });
 
-// Get single project
+// Get project by ID
 router.get('/:id', async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
@@ -39,65 +39,45 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create project (protected route)
-router.post('/',
-  authenticateToken,
-  [
-    body('title').notEmpty().trim(),
-    body('description').notEmpty().trim(),
-    body('category').isIn(['Residential', 'Commercial', 'Office', 'Other']),
-    body('images').isArray().notEmpty(),
-    body('details.location').notEmpty().trim(),
-    body('details.area').notEmpty().trim(),
-    body('details.year').notEmpty().trim(),
-  ],
-  validateRequest,
-  async (req, res) => {
-    try {
-      const project = new Project(req.body);
-      const savedProject = await project.save();
-      res.status(201).json(savedProject);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
-    }
+// Create new project (protected)
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const project = new Project(req.body);
+    const newProject = await project.save();
+    res.status(201).json(newProject);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
-);
+});
 
-// Update project (protected route)
-router.patch('/:id',
-  authenticateToken,
-  async (req, res) => {
-    try {
-      const project = await Project.findById(req.params.id);
-      if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-      }
-
-      Object.assign(project, req.body);
-      const updatedProject = await project.save();
-      res.json(updatedProject);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
+// Update project (protected)
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
+    res.json(project);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
-);
+});
 
-// Delete project (protected route)
-router.delete('/:id',
-  authenticateToken,
-  async (req, res) => {
-    try {
-      const project = await Project.findById(req.params.id);
-      if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-      }
-
-      await project.remove();
-      res.json({ message: 'Project deleted' });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+// Delete project (protected)
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const project = await Project.findByIdAndDelete(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
+    res.json({ message: 'Project deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-);
+});
 
 export default router; 
